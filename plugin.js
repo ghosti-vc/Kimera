@@ -4,6 +4,7 @@
 const SITE = "https://kimeraweb.com";
 const UA = "Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Mobile Safari/537.36";
 const HOME_ROW = 18;
+const DEBUG = true;   // diagnóstico de reproducción; se quita cuando funcione
 const enc = encodeURIComponent;
 
 function log(...a) { try { kino.log(...a); } catch { /* el registro no debe romper nada */ } }
@@ -250,6 +251,40 @@ async function opensOk(url) {
   } catch { return false; }
 }
 
+// Diagnóstico temporal: anota en el log cómo es la lista HLS y los primeros bytes de un trozo de video.
+function absUrl(base, u) {
+  if (/^https?:\/\//i.test(u)) return u;
+  const m = /^(https?:\/\/[^\/]+)(\/[^?#]*)?/.exec(base);
+  if (u[0] === "/") return m[1] + u;
+  return m[1] + (m[2] || "/").replace(/[^\/]*$/, "") + u;
+}
+async function debugStream(url) {
+  try {
+    let pl = String(await (await kino.fetch(url, { headers: playHeaders() })).text());
+    let base = url;
+    let lines = pl.split(/\r?\n/);
+    log("dbg lista: " + lines.length + " líneas");
+    log("dbg inicio: " + lines.slice(0, 12).join(" ¦ ").slice(0, 700));
+    const marks = lines.filter((l) => /^#EXT-X-(KEY|MEDIA|STREAM-INF|MAP|SESSION)/.test(l)).slice(0, 8);
+    log("dbg marcas: " + marks.join(" ¦ ").slice(0, 900));
+    const vi = lines.findIndex((l) => /^#EXT-X-STREAM-INF/.test(l));
+    if (vi >= 0 && lines[vi + 1]) {
+      base = absUrl(url, lines[vi + 1].trim());
+      pl = String(await (await kino.fetch(base, { headers: playHeaders() })).text());
+      lines = pl.split(/\r?\n/);
+      log("dbg variante " + base.slice(0, 120) + ": " + lines.slice(0, 10).join(" ¦ ").slice(0, 600));
+    }
+    const mp = lines.map((l) => /#EXT-X-MAP:.*URI="([^"]+)"/.exec(l)).find(Boolean);
+    const seg = mp ? mp[1] : lines.find((l) => l && l[0] !== "#");
+    if (!seg) return;
+    const su = absUrl(base, seg.trim());
+    const r = await kino.fetch(su, { headers: playHeaders() });
+    const t = String(await r.text());
+    const head = Array.from(t.slice(0, 24)).map((c) => c.charCodeAt(0).toString(16).padStart(2, "0")).join(" ");
+    log("dbg trozo " + su.slice(0, 100) + " status=" + r.status + " largo=" + t.length + " hex=" + head + " texto=" + t.slice(0, 24).replace(/[^\x20-\x7e]/g, "."));
+  } catch (e) { log("dbg falló " + String((e && e.message) || e).slice(0, 80)); }
+}
+
 export async function resolve(ref) {
   await null;
   const p = String(ref || "").split("|");
@@ -283,6 +318,7 @@ export async function resolve(ref) {
     }
     if (!first) first = opts[0];
   }
+  if (DEBUG) await debugStream(first.url);
   const out = streamOf(first.url);
   out.label = first.lang + (first.name ? " · " + first.name : "");
   const others = opts.filter((o) => o !== first).slice(0, 7);
