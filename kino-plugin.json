@@ -1,12 +1,28 @@
 {
-  "id": "kimera",
-  "name": "Kimera",
-  "description": "Películas, series, animes, dramas y donghuas en español desde Kimera.",
+  "id": "movie",
+  "name": "Movie",
+  "description": "Películas y series desde FanPelis, Cinehax y AllCalidad.",
   "author": "Ghosti-vc",
-  "version": "0.1.1",
-  "apiVersion": 4,
+  "version": "0.1.0",
+  "apiVersion": 9,
   "entry": "plugin.js",
-  "capabilities": ["home", "browse", "search", "episodes", "resolve"],
-  "hosts": ["kimeraweb.com", "cloudcdn.sbs"],
-  "streamHosts": "any"
+  "capabilities": [
+    "home",
+    "browse",
+    "search",
+    "episodes",
+    "resolve"
+  ],
+  "hosts": [
+    "fanpelis.to",
+    "www.fanpelis.to",
+    "allcalidad.re",
+    "www.allcalidad.re",
+    "cinehax.com",
+    "www.cinehax.com",
+    "image.tmdb.org"
+  ],
+  "fetchHosts": "any",
+  "streamHosts": "any",
+  "browser": true
 }
