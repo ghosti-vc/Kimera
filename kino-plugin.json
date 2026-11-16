@@ -1,28 +1,14 @@
 {
-  "id": "movie",
-  "name": "Movie",
-  "description": "Películas y series desde FanPelis, Cinehax y AllCalidad.",
-  "author": "Ghosti-vc",
+  "id": "fanpelis",
+  "name": "Fan Pelis",
   "version": "0.1.0",
-  "apiVersion": 9,
+  "apiVersion": 1,
   "entry": "plugin.js",
-  "capabilities": [
-    "home",
-    "browse",
-    "search",
-    "episodes",
-    "resolve"
-  ],
-  "hosts": [
-    "fanpelis.to",
-    "www.fanpelis.to",
-    "allcalidad.re",
-    "www.allcalidad.re",
-    "cinehax.com",
-    "www.cinehax.com",
-    "image.tmdb.org"
-  ],
-  "fetchHosts": "any",
-  "streamHosts": "any",
-  "browser": true
+  "description": "Películas y series online gratis en español de fanpelis.to",
+  "author": "ghosti-vc",
+  "homepage": "https://github.com/ghosti-vc/kino-plugin-fanpelis",
+  "hosts": ["fanpelis.to"],
+  "capabilities": ["search", "home", "browse", "episodes", "resolve"],
+  "color": "#E50914",
+  "icon": "icon.png"
 }
