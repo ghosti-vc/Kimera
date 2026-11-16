@@ -1,15 +1,7 @@
 {
-  "id": "fanpelis",
-  "name": "Fan Pelis",
-  "version": "0.4.0",
-  "apiVersion": 6,
-  "entry": "plugin.js",
-  "description": "Películas y series online gratis en español de fanpelis.to, con todos los servidores disponibles",
-  "author": "ghosti-vc",
-  "homepage": "https://github.com/ghosti-vc/kino-plugin-fanpelis",
-  "hosts": ["fanpelis.to"],
-  "streamHosts": "any",
-  "capabilities": ["search", "home", "browse", "episodes", "resolve"],
-  "color": "#E50914",
-  "icon": "icon.png"
+  "id": "fan-pelis-multi",
+  "name": "Fan Pelis Multi",
+  "description": "Fan Pelis + PelisflixHD + Cuevana en español",
+  "version": "0.5.0",
+  "entry": "plugin.js"
 }
