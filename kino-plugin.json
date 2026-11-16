@@ -3,7 +3,7 @@
   "id": "fanpelis",
   "name": "Fan Pelis",
   "description": "Películas, series y animes en español de fanpelis.to, en HD y gratis.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "entry": "plugin.js",
   "author": "ghosti-vc",
   "hosts": ["fanpelis.to", "vimeos.net", "vimeos.zip"]
