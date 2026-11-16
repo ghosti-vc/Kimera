@@ -1,10 +1,11 @@
 {
-  "apiVersion": 20,
+  "apiVersion": 6,
   "id": "fanpelis",
   "name": "Fan Pelis",
   "description": "Películas, series y animes en español de fanpelis.to, en HD y gratis.",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "entry": "plugin.js",
   "author": "ghosti-vc",
+  "capabilities": ["search", "home", "browse", "episodes", "resolve"],
   "hosts": ["fanpelis.to", "vimeos.net", "vimeos.zip"]
 }
