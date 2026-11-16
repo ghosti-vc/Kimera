@@ -1,11 +1,15 @@
 {
-  "apiVersion": 6,
   "id": "fanpelis",
   "name": "Fan Pelis",
-  "description": "Películas, series y animes en español de fanpelis.to, en HD y gratis.",
-  "version": "0.3.8",
+  "version": "0.4.0",
+  "apiVersion": 6,
   "entry": "plugin.js",
+  "description": "Películas y series online gratis en español de fanpelis.to, con todos los servidores disponibles",
   "author": "ghosti-vc",
+  "homepage": "https://github.com/ghosti-vc/kino-plugin-fanpelis",
+  "hosts": ["fanpelis.to"],
+  "streamHosts": "any",
   "capabilities": ["search", "home", "browse", "episodes", "resolve"],
-  "hosts": ["fanpelis.to", "vimeos.net", "vimeos.zip"]
+  "color": "#E50914",
+  "icon": "icon.png"
 }
