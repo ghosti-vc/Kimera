@@ -1,9 +1,9 @@
 {
-  "id": "kimeraweb",
-  "name": "KimeraWeb",
-  "description": "Películas de KimeraWeb en español: catálogo, búsqueda y servidores.",
-  "author": "Artic Artu",
-  "version": "1.0.4",
+  "id": "fanpelis",
+  "name": "FanPelis",
+  "description": "Películas y series de FanPelis.",
+  "author": "Ghosti-vc",
+  "version": "0.1.0",
   "apiVersion": 9,
   "entry": "plugin.js",
   "capabilities": [
@@ -14,10 +14,11 @@
     "resolve"
   ],
   "hosts": [
-    "kimeraweb.com",
-    "www.kimeraweb.com",
-    "cloudcdn.sbs"
+    "fanpelis.to",
+    "www.fanpelis.to",
+    "image.tmdb.org"
   ],
   "fetchHosts": "any",
-  "streamHosts": "any"
+  "streamHosts": "any",
+  "browser": true
 }
