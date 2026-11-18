@@ -3,7 +3,7 @@
   "name": "FanPelis",
   "description": "Películas y series de FanPelis.",
   "author": "Ghosti-vc",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "apiVersion": 9,
   "entry": "plugin.js",
   "capabilities": [
