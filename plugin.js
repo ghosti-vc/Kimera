@@ -65,14 +65,14 @@ function cards(html) {
     const title = decH(alt ? alt[1] : "");
     if (!title) continue;
     seen.add(m[1]);
-    items.push({ id: "km-" + m[1], ref: m[1], title: title.slice(0, 200), kind: "movie", genres: ["peliculas"], poster: src ? absUrl(decH(src[1])) || undefined : undefined });
+    items.push({ id: "km-" + m[1].slice(8), ref: "m|" + m[1].slice(8), title: title.slice(0, 200), kind: "movie", genres: ["peliculas"], poster: src ? absUrl(decH(src[1])) || undefined : undefined });
   }
   // Respaldo: JSON embebido en la página.
   const re2 = /"url":"(\/movies\/[a-z0-9-]+-\d+)","name":"((?:[^"\\]|\\.)*)"/g;
   while ((m = re2.exec(html)) !== null) {
     if (seen.has(m[1])) continue;
     seen.add(m[1]);
-    items.push({ id: "km-" + m[1], ref: m[1], title: unesc(m[2]).slice(0, 200), kind: "movie", genres: ["peliculas"] });
+    items.push({ id: "km-" + m[1].slice(8), ref: "m|" + m[1].slice(8), title: unesc(m[2]).slice(0, 200), kind: "movie", genres: ["peliculas"] });
   }
   return items;
 }
@@ -82,7 +82,7 @@ export async function home() {
   const items = cards(await getText(BASE + "/movies/?page=1"));
   log("inicio: " + items.length);
   if (!items.length) throw fail("unavailable", "sin tarjetas", "No se pudo cargar el catálogo.", "Could not load the catalog.");
-  return [{ id: "row-km", title: "KimeraWeb", genre: "peliculas", ref: "1", items }];
+  return [{ id: "row-km", title: "KimeraWeb", genre: "peliculas", ref: "pg", items }];
 }
 
 export async function browse(ref, cursor) {
@@ -103,7 +103,7 @@ export async function search(arg) {
 
 export async function episodes(ref) {
   await null;
-  const id = String(ref || "");
+  const id = pathOf(ref);
   if (id.indexOf("/movies/") !== 0) throw fail("not_found", "referencia desconocida", "No se encontró este título.", "Title not found.");
   let title = "";
   try {
@@ -111,14 +111,29 @@ export async function episodes(ref) {
     const t = /<h1[^>]*>([\s\S]*?)<\/h1>/i.exec(html) || /<title>([^<]*)<\/title>/i.exec(html);
     title = t ? t[1].replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim() : "";
   } catch (e) { /* el título no es obligatorio */ }
-  return { series: { title }, episodes: [{ season: 1, number: 1, ref: id, title: tr("Película", "Movie") }] };
+  return { series: { title }, episodes: [{ season: 1, number: 1, ref: "m|" + id.slice(8), title: tr("Película", "Movie") }] };
+}
+
+function pathOf(ref) {
+  const r = String(ref || "");
+  return r.indexOf("m|") === 0 ? "/movies/" + r.slice(2) : r;
 }
 
 function hostsOf(html) {
   const out = [];
-  const re = /"hosts":\s*\[/g;
+  // Formato actual: "playback": [ { playback_options: [ {name,type,url,...} ] } ]
+  const re = /"playback":\s*\[/g;
   let m;
   while ((m = re.exec(html)) !== null) {
+    const arr = balancear(html, m.index + m[0].length - 1);
+    if (!arr) continue;
+    try {
+      for (const grp of JSON.parse(arr)) for (const o of (grp && grp.playback_options) || []) if (o && o.active !== false && !o.failed) out.push(o);
+    } catch (e) { log("playback: JSON no válido"); }
+  }
+  // Formato anterior: "hosts": [ ... ]
+  const re2 = /"hosts":\s*\[/g;
+  while ((m = re2.exec(html)) !== null) {
     const arr = balancear(html, m.index + m[0].length - 1);
     if (!arr) continue;
     try { out.push.apply(out, JSON.parse(arr)); } catch (e) { log("hosts: JSON no válido"); }
@@ -138,9 +153,10 @@ async function playlistOk(url, referer) {
 
 export async function resolve(ref) {
   await null;
-  const id = String(ref || "");
+  const id = pathOf(ref);
   const page = BASE + id + "/watch";
-  const hosts = hostsOf(await getText(page, BASE + id));
+  let hosts = hostsOf(await getText(BASE + id, BASE + "/"));
+  if (!hosts.length) hosts = hostsOf(await getText(page, BASE + id));
   log("hosts: " + hosts.map((h) => (h && h.type) + ":" + (h && h.name)).join(" , "));
   if (!hosts.length) throw fail("unavailable", "sin hosts", "Esta película no tiene servidores disponibles.", "No servers available for this title.");
   let disguised = false;
@@ -164,6 +180,7 @@ export async function resolve(ref) {
       const t = await playlistOk(c, hdr.Referer);
       if (!t) continue;
       // Si los trozos vienen disfrazados de imagen, Kino no los puede abrir.
+      log("lista " + label + ": " + t.slice(0, 260).replace(/\n/g, " | "));
       if (/^[^#\n]*\.(?:png|jpe?g|gif|webp)(?:\?[^\n]*)?$/im.test(t)) { disguised = true; log("lista con trozos de imagen: " + label); break; }
       return { url: c, mime: "application/x-mpegurl", headers: hdr, label };
     }
