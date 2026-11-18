@@ -1,7 +1,9 @@
 {
-  "id": "fan-pelis-multi",
-  "name": "Fan Pelis Multi",
-  "description": "Fan Pelis + PelisflixHD + Cuevana en español",
-  "version": "0.5.0",
-  "entry": "plugin.js"
+  "name": "KimeraWeb",
+  "description": "Películas y series de Kimeraweb en español: catálogo, búsqueda y servidores HLS (Kmv y más).",
+  "version": "1.0.0",
+  "apiVersion": 7,
+  "entry": "plugin.js",
+  "icon": "icon.png",
+  "author": "Artic Artu"
 }
