@@ -3,7 +3,7 @@
   "name": "KimeraWeb",
   "description": "Películas de KimeraWeb en español: catálogo, búsqueda y servidores.",
   "author": "Artic Artu",
-  "version": "1.0.2",
+  "version": "1.0.4",
   "apiVersion": 9,
   "entry": "plugin.js",
   "capabilities": [
