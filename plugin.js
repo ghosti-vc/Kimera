@@ -45,17 +45,34 @@ function absUrl(u) {
   return /^https:\/\//i.test(x) ? x : "";
 }
 
+function decH(s) {
+  return String(s || "").replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16))).replace(/&#(\d+);/g, (_, d) => String.fromCharCode(Number(d)))
+    .replace(/&quot;/g, '"').replace(/&#039;|&apos;/g, "'").replace(/&amp;/g, "&").replace(/\s+/g, " ").trim();
+}
+
 function cards(html) {
   const items = [];
   const seen = new Set();
-  const re = /"url":"(\/movies\/[a-z0-9-]+-\d+)","name":"((?:[^"\\]|\\.)*)"/g;
+  // Tarjetas en HTML: <a href="/movies/slug-123"> ... <img data-src="poster" alt="Título">
+  const re = /<a\b[^>]*href="(\/movies\/[a-z0-9-]+-\d+)"[^>]*>([\s\S]{0,700}?)<\/a>/gi;
   let m;
   while ((m = re.exec(html)) !== null) {
     if (seen.has(m[1])) continue;
+    const img = /<img\b[^>]*>/i.exec(m[2]);
+    if (!img) continue;
+    const alt = /\balt="([^"]+)"/i.exec(img[0]);
+    const src = /\b(?:data-src|data-lazy-src|src)="([^"]+)"/i.exec(img[0]);
+    const title = decH(alt ? alt[1] : "");
+    if (!title) continue;
     seen.add(m[1]);
-    const near = html.slice(Math.max(0, m.index - 400), m.index + 600);
-    const p = /"(?:poster_url|poster|image|thumbnail)":"([^"]+)"/.exec(near);
-    items.push({ id: "km-" + m[1], ref: m[1], title: unesc(m[2]).slice(0, 200), kind: "movie", genres: ["peliculas"], poster: p ? absUrl(unesc(p[1])) || undefined : undefined });
+    items.push({ id: "km-" + m[1], ref: m[1], title: title.slice(0, 200), kind: "movie", genres: ["peliculas"], poster: src ? absUrl(decH(src[1])) || undefined : undefined });
+  }
+  // Respaldo: JSON embebido en la página.
+  const re2 = /"url":"(\/movies\/[a-z0-9-]+-\d+)","name":"((?:[^"\\]|\\.)*)"/g;
+  while ((m = re2.exec(html)) !== null) {
+    if (seen.has(m[1])) continue;
+    seen.add(m[1]);
+    items.push({ id: "km-" + m[1], ref: m[1], title: unesc(m[2]).slice(0, 200), kind: "movie", genres: ["peliculas"] });
   }
   return items;
 }
