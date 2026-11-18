@@ -87,22 +87,28 @@ async function homeOf(site) {
 
 export async function home() {
   await null;
-  const f = rHome("f").catch(() => []);
-  const res = await Promise.allSettled(SITES.map((s) => homeOf(s)));
   const rows = [];
-  const fi = await f;
-  if (fi.length) rows.push({ id: "row-f", title: "FanPelis", genre: "peliculas", ref: "f", items: fi.slice(0, 20) });
-  res.forEach((r, i) => {
-    if (r.status === "fulfilled" && r.value.length) rows.push({ id: "row-" + SITES[i][0], title: SITES[i][1], genre: "series", ref: SITES[i][0], items: r.value.slice(0, 20) });
-    else log("inicio: falló " + SITES[i][1]);
-  });
-  if (!rows.length) throw fail("unavailable", "ningún sitio respondió", "No se pudo cargar el inicio. Prueba de nuevo en un momento.", "Could not load the home. Try again in a moment.");
+  const [mv, sr] = await Promise.all([rHome("f"), wpList("f", "tvshows", 1).catch(() => [])]);
+  log("inicio series -> " + sr.length);
+  if (mv.length) rows.push({ id: "row-f", title: "Películas", genre: "peliculas", ref: "f", items: mv.slice(0, 20) });
+  if (sr.length) rows.push({ id: "row-fs", title: "Series", genre: "series", ref: "fs", items: sr.slice(0, 20) });
+  if (!rows.length) {
+    const years = await Promise.all([rByYear("f", 2026), rByYear("f", 2025)]);
+    log("inicio por año: " + years[0].length + " + " + years[1].length);
+    if (years[0].length) rows.push({ id: "row-y26", title: "2026", genre: "peliculas", ref: "y26", items: years[0].slice(0, 20) });
+    if (years[1].length) rows.push({ id: "row-y25", title: "2025", genre: "peliculas", ref: "y25", items: years[1].slice(0, 20) });
+  }
+  if (!rows.length) throw fail("unavailable", "sin catálogo", "No se pudo cargar el inicio. Usa el buscador.", "Could not load the home. Use search.");
   return rows;
 }
 
-export async function browse(ref) {
+export async function browse(ref, cursor) {
   await null;
-  if (String(ref) === "f") return { items: await rHome(String(ref)) };
+  const pg = parseInt(cursor, 10) || 1;
+  if (String(ref) === "f") { const it = await wpList("f", "movies", pg); return { items: it, nextCursor: it.length ? String(pg + 1) : undefined }; }
+  if (String(ref) === "fs") { const it = await wpList("f", "tvshows", pg); return { items: it, nextCursor: it.length ? String(pg + 1) : undefined }; }
+  if (String(ref) === "y26") return { items: await rByYear("f", 2026) };
+  if (String(ref) === "y25") return { items: await rByYear("f", 2025) };
   const site = SITES.find((s) => s[0] === String(ref));
   if (!site) throw fail("not_found", "sitio desconocido", "Ese catálogo no existe.", "That catalog does not exist.");
   return { items: await homeOf(site) };
@@ -445,19 +451,40 @@ async function rSearch(k, q) {
   return (((d && d.data && d.data.posts) || []).map((o) => rItem(k, o))).filter(Boolean);
 }
 
-// Catálogo del inicio: se prueban rutas conocidas de este motor y se anota cuál responde.
-async function rHome(k) {
-  const tries = ["/listing/movies?page=1&postsPerPage=20&orderBy=latest&order=desc", "/posts?post_type=movies&page=1&per_page=20", "/latest?post_type=movies&page=1"];
-  for (const p of tries) {
-    try {
-      const d = await rJson(k, p);
-      const posts = (d && d.data && (d.data.posts || d.data)) || [];
-      const items = (Array.isArray(posts) ? posts : []).map((o) => rItem(k, o)).filter(Boolean);
-      log(REST[k][0] + " inicio " + p.slice(0, 30) + " -> " + items.length);
-      if (items.length) return items;
-    } catch (e) { /* ya anotado */ }
+// Catálogo del inicio: lista pública de WordPress (películas y series). Se anota qué responde.
+async function wpJson(k, path) {
+  const base = REST[k][1];
+  const r = await kino.fetch(base + path, { headers: { "User-Agent": UA, Accept: "application/json", Referer: base + "/" } });
+  const t = await r.text();
+  if (!r.ok) { log(REST[k][0] + " " + path.slice(0, 50) + " status=" + r.status); return null; }
+  try { return JSON.parse(t); } catch (e) { log(REST[k][0] + " " + path.slice(0, 40) + " no es JSON: " + t.slice(0, 80).replace(/\s+/g, " ")); return null; }
+}
+
+async function wpList(k, type, page) {
+  const d = await wpJson(k, "/wp-json/wp/v2/" + type + "?per_page=20&page=" + (page || 1) + "&_embed=wp:featuredmedia");
+  if (!Array.isArray(d)) return [];
+  const m = type === "movies" ? "m" : "s";
+  const out = [];
+  for (const o of d) {
+    if (!o || !o.id) continue;
+    const title = dec(String((o.title && o.title.rendered) || "").replace(/<[^>]*>/g, " ")).replace(/\s*\(\d{4}\)\s*$/, "").trim();
+    if (!title) continue;
+    const fm = o._embedded && o._embedded["wp:featuredmedia"] && o._embedded["wp:featuredmedia"][0];
+    const poster = fm && fm.source_url ? String(fm.source_url) : undefined;
+    out.push({ id: k + "-" + o.id, ref: k + "|" + m + "|" + o.id, title: title.slice(0, 200), kind: m === "m" ? "movie" : "series", genres: [m === "m" ? "peliculas" : "series"], poster });
   }
-  return [];
+  return out;
+}
+
+async function rHome(k) {
+  const items = await wpList(k, "movies", 1).catch(() => []);
+  log(REST[k][0] + " inicio películas -> " + items.length);
+  return items;
+}
+
+// Respaldo: títulos recientes buscando el año en el nombre.
+async function rByYear(k, year) {
+  try { return (await rSearch(k, String(year))).filter((x) => x.kind === "movie" || x.kind === "series"); } catch (e) { return []; }
 }
 
 async function rEpisodes(ref) {
