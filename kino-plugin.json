@@ -1,9 +1,13 @@
 {
+  "id": "kimeraweb",
   "name": "KimeraWeb",
-  "description": "Películas y series de Kimeraweb en español: catálogo, búsqueda y servidores HLS (Kmv y más).",
-  "version": "1.0.0",
-  "apiVersion": 7,
+  "description": "Películas de KimeraWeb en español: catálogo, búsqueda y servidores.",
+  "author": "Artic Artu",
+  "version": "1.0.1",
+  "apiVersion": 9,
   "entry": "plugin.js",
-  "icon": "icon.png",
-  "author": "Artic Artu"
+  "capabilities": ["home", "browse", "search", "episodes", "resolve"],
+  "hosts": ["kimeraweb.com", "www.kimeraweb.com"],
+  "fetchHosts": "any",
+  "streamHosts": "any"
 }
