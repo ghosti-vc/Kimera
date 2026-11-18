@@ -88,10 +88,11 @@ async function homeOf(site) {
 export async function home() {
   await null;
   const rows = [];
-  const [mv, sr] = await Promise.all([rHome("f"), wpList("f", "tvshows", 1).catch(() => [])]);
-  log("inicio series -> " + sr.length);
+  const [mv, sr, an] = await Promise.all([rHome("f"), wpList("f", "tvshows", 1).catch(() => []), wpList("f", "animes", 1).catch(() => [])]);
+  log("inicio series -> " + sr.length + " animes -> " + an.length);
   if (mv.length) rows.push({ id: "row-f", title: "Películas", genre: "peliculas", ref: "f", items: mv.slice(0, 20) });
   if (sr.length) rows.push({ id: "row-fs", title: "Series", genre: "series", ref: "fs", items: sr.slice(0, 20) });
+  if (an.length) rows.push({ id: "row-fa", title: "Animes", genre: "anime", ref: "fa", items: an.slice(0, 20) });
   if (!rows.length) {
     const years = await Promise.all([rByYear("f", 2026), rByYear("f", 2025)]);
     log("inicio por año: " + years[0].length + " + " + years[1].length);
@@ -106,6 +107,7 @@ export async function browse(ref, cursor) {
   await null;
   const pg = parseInt(cursor, 10) || 1;
   if (String(ref) === "f") { const it = await wpList("f", "movies", pg); return { items: it, nextCursor: it.length ? String(pg + 1) : undefined }; }
+  if (String(ref) === "fa") { const it = await wpList("f", "animes", pg); return { items: it, nextCursor: it.length ? String(pg + 1) : undefined }; }
   if (String(ref) === "fs") { const it = await wpList("f", "tvshows", pg); return { items: it, nextCursor: it.length ? String(pg + 1) : undefined }; }
   if (String(ref) === "y26") return { items: await rByYear("f", 2026) };
   if (String(ref) === "y25") return { items: await rByYear("f", 2025) };
